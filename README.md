@@ -9,6 +9,9 @@ It is designed as a prototype for evaluation and a possible future USC IT pilot.
 It is not an official USC service and is not a substitute for an academic
 advisor, degree audit, official USC policy, or an admissions decision.
 
+See [PILOT_SCOPE.md](PILOT_SCOPE.md) for the detailed capability and limitation
+review intended for USC IT, security, privacy, and advising stakeholders.
+
 ## What it does
 
 - Searches current public USC web pages before answering.
@@ -33,6 +36,9 @@ advisor, degree audit, official USC policy, or an admissions decision.
 - Questions, recent conversation, and optional academic context are sent to
   OpenAI. Do not submit passwords, USC IDs, API keys, or other sensitive data.
 - OpenAI model and web-search usage may incur charges.
+
+For the complete pilot boundary, privacy notes, risks, and recommended USC IT
+review items, see [PILOT_SCOPE.md](PILOT_SCOPE.md).
 
 ## Setup
 
@@ -94,6 +100,7 @@ inspect every cited source before drawing conclusions.
 ```text
 .
 ├── architecture.html       Plain-language architecture overview
+├── PILOT_SCOPE.md           Detailed capabilities, limitations, and pilot boundaries
 ├── trojan-ai-v6/
 │   ├── app.py               Streamlit user interface
 │   ├── engine.py            Research, citations, review, repair, and formatting
