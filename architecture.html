@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>TrojanAI v6.1 · Architecture</title>
+  <style>
+    :root { --ink:#172033; --muted:#5f6b7a; --line:#dbe2ea; --paper:#fff; --bg:#f4f7fb; --blue:#1769aa; --teal:#087f78; --gold:#a76512; --red:#a53b45; }
+    * { box-sizing:border-box; }
+    body { margin:0; color:var(--ink); background:var(--bg); font:16px/1.6 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
+    .wrap { max-width:1120px; margin:auto; padding:48px 24px 72px; }
+    header { padding:34px 38px; color:white; border-radius:22px; background:linear-gradient(135deg,#152c50,#1769aa 62%,#087f78); box-shadow:0 12px 32px #193e6622; }
+    h1,h2,h3 { line-height:1.2; margin-top:0; }
+    h1 { font-size:clamp(2rem,4vw,3.5rem); margin-bottom:10px; letter-spacing:-.04em; }
+    h2 { margin-top:42px; font-size:1.65rem; }
+    h3 { font-size:1.05rem; margin-bottom:8px; }
+    header p { max-width:780px; margin:0; color:#e4effb; font-size:1.08rem; }
+    .eyebrow { text-transform:uppercase; letter-spacing:.14em; font-size:.75rem; font-weight:700; color:#bfe7ec; }
+    .grid { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; }
+    .card,.panel { background:var(--paper); border:1px solid var(--line); border-radius:15px; padding:22px; box-shadow:0 4px 16px #193e6609; }
+    .card p,.panel p { margin:0; color:var(--muted); }
+    .card h3 { color:var(--blue); }
+    .flow { display:grid; grid-template-columns:repeat(5,1fr); gap:10px; align-items:stretch; }
+    .step { position:relative; padding:18px 14px; border:1px solid var(--line); border-radius:13px; background:#fff; }
+    .step:not(:last-child)::after { content:"→"; position:absolute; right:-17px; top:38%; z-index:2; color:var(--blue); font-size:1.4rem; font-weight:700; }
+    .num { display:inline-grid; place-items:center; width:27px; height:27px; margin-bottom:10px; border-radius:50%; background:#e4f2fb; color:var(--blue); font-weight:700; }
+    .step p { margin:0; color:var(--muted); font-size:.92rem; }
+    .diagram { overflow:auto; background:#101b2d; color:#e6eef8; border-radius:15px; padding:22px; font:14px/1.55 ui-monospace,SFMono-Regular,Menlo,monospace; white-space:pre; }
+    code { color:#075b63; background:#e8f3f4; padding:2px 5px; border-radius:4px; }
+    .diagram code { color:inherit; background:none; padding:0; }
+    table { width:100%; border-collapse:collapse; background:white; border:1px solid var(--line); border-radius:12px; overflow:hidden; }
+    th,td { text-align:left; vertical-align:top; padding:13px 15px; border-bottom:1px solid var(--line); }
+    th { background:#edf3f8; color:#27425f; font-size:.9rem; }
+    tr:last-child td { border-bottom:0; }
+    .tag { display:inline-block; margin:0 5px 5px 0; padding:3px 9px; border-radius:20px; background:#edf3f8; color:#31516d; font-size:.82rem; }
+    .note { border-left:4px solid var(--gold); background:#fff8ed; padding:16px 18px; border-radius:0 10px 10px 0; }
+    .success { border-left:4px solid var(--teal); background:#edf9f7; padding:16px 18px; border-radius:0 10px 10px 0; }
+    ul { margin-top:8px; }
+    .muted { color:var(--muted); }
+    footer { margin-top:40px; color:var(--muted); font-size:.9rem; }
+    @media (max-width:800px) { .grid,.flow { grid-template-columns:1fr; } .step:not(:last-child)::after { content:"↓"; right:48%; top:auto; bottom:-24px; } }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <header>
+      <div class="eyebrow">trojan-ai-v6 · revision 6.1</div>
+      <h1>How TrojanAI works</h1>
+      <p>TrojanAI is a USC question-answering assistant. Think of it as three people working together: a student asks, a researcher finds the answer, and an editor checks it before it is shown.</p>
+    </header>
+
+    <h2>The whole idea in one picture</h2>
+    <div class="diagram">Student types a question
+        │
+        ▼
+   app.py shows the chat screen
+        │
+        ▼
+   engine.py sends the question to OpenAI
+        │
+        ├── searches current USC websites
+        │
+        ├── writes an answer with source links
+        │
+        ├── asks a second model request: “Is this answer correct and useful?”
+        │
+        └── fixes it once if the review finds a problem
+        │
+        ▼
+   Student sees the answer, sources, and any warnings</div>
+
+    <div class="success"><strong>In short:</strong> it does not simply ask an AI to answer from memory. It researches first, checks the draft, and tells the student when something is still uncertain.</div>
+
+    <h2>What happens when a student asks a question?</h2>
+    <div class="flow">
+      <div class="step"><span class="num">1</span><h3>Ask</h3><p>The student enters a question, such as “When can I drop this class?”</p></div>
+      <div class="step"><span class="num">2</span><h3>Remember</h3><p>The app adds recent chat messages, the optional academic profile, and today’s Los Angeles date.</p></div>
+      <div class="step"><span class="num">3</span><h3>Look up</h3><p>OpenAI searches and opens relevant USC pages. Search is restricted to USC domains.</p></div>
+      <div class="step"><span class="num">4</span><h3>Check</h3><p>A separate review looks for wrong dates, missing sources, and an answer that is not actionable.</p></div>
+      <div class="step"><span class="num">5</span><h3>Show</h3><p>The student gets the answer, clickable sources, the research date, and warnings if needed.</p></div>
+    </div>
+
+    <h2>The three simple parts</h2>
+    <div class="grid">
+      <section class="card"><h3>1. Chat screen — <code>app.py</code></h3><p>Loads the configured API key, displays the page, collects the question, stores the visible conversation during the session, and displays the answer and sources.</p></section>
+      <section class="card"><h3>2. Brain — <code>engine.py</code></h3><p>Prepares the question, calls OpenAI, runs web research, turns citations into links, asks for a review, and returns one final result.</p></section>
+      <section class="card"><h3>3. Test bench — tests and <code>evaluate.py</code></h3><p>Checks that the workflow behaves correctly. Live evaluation is separate and requires deliberate confirmation because it uses the API.</p></section>
+    </div>
+
+    <h2>How the “research and review” works</h2>
+    <div class="grid">
+      <section class="panel"><h3>First request: write the answer</h3><p>The research instructions tell the model to search current USC pages, open the relevant pages, match the right year and session, and include the exact source beside important claims. The response must use fixed fields such as answer, assumptions, key details, steps, notes, and one follow-up question.</p></section>
+      <section class="panel"><h3>Second request: challenge the answer</h3><p>A different prompt receives the draft and independently checks five things: directness, factual support, specificity, context, and next steps.</p></section>
+      <section class="panel"><h3>Optional repair</h3><p>If the answer fails, the engine gives the review back to the research model. It creates a new cited answer and checks it one more time. It stops after that one repair.</p></section>
+    </div>
+
+    <h2>What the student sees</h2>
+    <ol>
+      <li>The answer in the chat.</li>
+      <li>Clickable source links, labeled as USC or external.</li>
+      <li>The research date and number of API requests.</li>
+      <li>Review details and warnings when evidence is missing or a problem remains.</li>
+    </ol>
+
+    <h2>How consistent formatting is enforced</h2>
+    <p>The model does not decide the page layout. It returns structured information, and the Python program places that information into one template:</p>
+    <div class="diagram">### Answer
+### Assumptions                 (shown when needed)
+### Key details                 (always a consistent table)
+### What to do next             (numbered steps)
+### Important notes             (warnings and limitations)
+### One follow-up question      (shown only when needed)</div>
+    <p>This works across many question types because the fields are general. A deadline uses the key-details table for dates; a transfer question uses it for requirements; a private-record question uses it for access limitations. The model supplies the content, while <code>format_answer()</code> controls the presentation.</p>
+
+    <h2>How follow-up questions work</h2>
+    <div class="diagram">First turn:  “I want to transfer to Viterbi. What should I prepare?”
+        │
+        ▼
+Answer general preparation + ask:
+“Which Viterbi major and transfer term are you targeting?”
+        │
+        ▼
+Second turn: “Computer Science for Fall 2027.”
+        │
+        ▼
+The engine sends the previous answer, the new clarification,
+and the conversation history back for a specific research answer.</div>
+    <p>Missing information is treated as context to collect, not automatically as an error. The conversation keeps the previous answer, so the student can answer the follow-up naturally in the next message.</p>
+
+    <h2>Why the answer may contain a warning</h2>
+    <p>The program is deliberately cautious. A good-looking score cannot hide a missing official source or a missing date in a deadline answer.</p>
+    <p><span class="tag">No official citation → warning</span><span class="tag">Deadline without a date → warning</span><span class="tag">Unclear review → fail safely</span><span class="tag">One repair only</span></p>
+    <div class="note"><strong>Important:</strong> TrojanAI cannot log into student systems. It cannot read STARS, WebReg, private USC portals, or medical records, and it should never be given passwords, USC IDs, API keys, or private account details. The API key is loaded from the environment or Streamlit secrets.</div>
+
+    <h2>What information is used?</h2>
+    <table>
+      <thead><tr><th>Information</th><th>Why it is used</th></tr></thead>
+      <tbody>
+        <tr><td>Current question</td><td>The thing the student wants answered.</td></tr>
+        <tr><td>Recent conversation</td><td>Helps answer follow-up questions without repeating context. The engine keeps at most 16 messages.</td></tr>
+        <tr><td>Optional academic profile</td><td>Lets the answer account for facts such as major, catalog year, or completed courses.</td></tr>
+        <tr><td>USC web pages</td><td>Provides current evidence for policies, dates, requirements, and contacts.</td></tr>
+        <tr><td>Optional old SQLite notes</td><td>Provides possible historical leads only. Live USC research is still required.</td></tr>
+      </tbody>
+    </table>
+
+    <h2>How much work does one question use?</h2>
+    <div class="card"><p><strong>Review off:</strong> one research request.</p><p><strong>Review on and answer passes:</strong> two requests — write, then check.</p><p><strong>Review on and answer needs repair:</strong> up to four requests — write, check, repair, check again.</p></div>
+
+    <details>
+      <summary><strong>Technical details for developers</strong></summary>
+      <p><code>answer()</code> is the main coordinator. <code>payload()</code> bounds the context and adds the Los Angeles date. <code>request()</code> calls the OpenAI Responses API with required USC-only web search, <code>store=False</code>, bounded tool calls, and a strict JSON schema. <code>structured_answer()</code> validates the model fields, while <code>format_answer()</code> creates the fixed Markdown layout. <code>parse_audit()</code> reads the review JSON, while <code>enforce_checks()</code> catches missing citations and dates that a model score might overlook.</p>
+      <p>The deterministic tests cover context handling, URL safety, citation conversion, repair behavior, privacy settings, incomplete responses, and Streamlit reruns.</p>
+    </details>
+
+    <footer>Based on the source files in <code>trojan-ai-v6/</code>. This page explains the implementation in plain language; it does not guarantee that any particular USC policy or date is current.</footer>
+  </main>
+</body>
+</html>
